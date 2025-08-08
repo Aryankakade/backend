@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA-AI | Next-Generation AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: #0a0a0f;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background */
+        .cosmic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 30%, #0f0f23 70%, #000000 100%);
+            z-index: -2;
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* Floating Orbs */
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: float 20s infinite linear;
+        }
+        
+        .orb-1 {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, transparent 70%);
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .orb-2 {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.3) 0%, transparent 70%);
+            top: 60%;
+            right: 15%;
+            animation-delay: 7s;
+        }
+        
+        .orb-3 {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(0, 191, 255, 0.2) 0%, transparent 70%);
+            bottom: 30%;
+            left: 5%;
+            animation-delay: 14s;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(100px, -100px) rotate(120deg); }
+            66% { transform: translate(-50px, 50px) rotate(240deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        
+        /* Page Container */
+        .page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            overflow-y: auto;
+        }
+        
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 2;
+        }
+        
+        /* Main Container */
+        .main-container {
+            background: rgba(16, 16, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 
+                0 0 60px rgba(0, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.8), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Logo Container */
+        .logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #00ffff, #8a2be2);
+            border-radius: 24px;
+            padding: 3px;
+            animation: glow-pulse 4s ease-in-out infinite;
+        }
+        
+        .logo-inner {
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            border-radius: 21px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        @keyframes glow-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
+                transform: scale(1.05);
+            }
+        }
+        
+        /* Auth Buttons */
+        .auth-btn, .nova-btn {
+            position: relative;
+            width: 100%;
+            padding: 16px 24px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+        
+        .auth-btn::before, .nova-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .auth-btn:hover::before, .nova-btn:hover::before {
+            left: 100%;
+        }
+        
+        .google-btn {
+            background: linear-gradient(135deg, #ffffff, #f0f0f0);
+            color: #333;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .google-btn:hover {
+            background: linear-gradient(135deg, #f8f8f8, #e8e8e8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .github-btn {
+            background: linear-gradient(135deg, #24292e, #1a1e22);
+            color: #ffffff;
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+        
+        .github-btn:hover {
+            background: linear-gradient(135deg, #2f363d, #24292e);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+        }
+        
+        .nova-btn-primary {
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: #000;
+            border-color: rgba(0, 255, 255, 0.5);
+        }
+        
+        .nova-btn-primary:hover {
+            background: linear-gradient(135deg, #00e6e6, #0066cc);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.3);
+        }
+        
+        .nova-btn-secondary {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(138, 43, 226, 0.6));
+            color: #ffffff;
+            border-color: rgba(138, 43, 226, 0.5);
+        }
+        
+        .nova-btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.9), rgba(138, 43, 226, 0.7));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.3);
+        }
+        
+        /* Form Elements */
+        .nova-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nova-input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .nova-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Agent Cards */
+        .agent-card {
+            background: rgba(16, 16, 24, 0.8);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .agent-card:hover::before {
+            left: 100%;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 20px 40px rgba(0, 255, 255, 0.2);
+        }
+        
+        .agent-card.selected {
+            border-color: rgba(0, 255, 255, 0.8);
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+        
+        .agent-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #00ffff, #8a2be2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        /* Chat Interface */
+        .chat-container {
+            height: 100vh;
+            display: flex;
+            background: rgba(10, 10, 15, 0.95);
+        }
+        
+        .chat-sidebar {
+            width: 300px;
+            background: rgba(16, 16, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .chat-header {
+            background: rgba(16, 16, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .chat-input-container {
+            background: rgba(16, 16, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 20px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            position: relative;
+            animation: fadeInUp 0.3s ease;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: #000;
+            margin-left: auto;
+        }
+        
+        .message.bot {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            color: #ffffff;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .chat-input {
+            width: 100%;
+            padding: 16px 60px 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #ffffff;
+            font-size: 16px;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .chat-actions {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: none;
+            color: #00ffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* Typewriter Effect */
+        .typewriter {
+            border-right: 2px solid rgba(0, 255, 255, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: rgba(0, 255, 255, 0.8); }
+        }
+        
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #00ffff;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 255, 255, 0.3);
+            border-top: 3px solid #00ffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Success Animation */
+        .success-check {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #00ff88;
+            margin: 0 auto 20px;
+            position: relative;
+            animation: pulse-green 1.5s ease-in-out infinite;
+        }
+        
+        .success-check::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff88;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+        }
+        
+        /* History Item */
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(0, 255, 255, 0.05);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Floating Menu Button */
+        .floating-menu-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ffff, #8a2be2);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .floating-menu-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+        
+        .floating-menu {
+            position: fixed;
+            top: 100px;
+            left: 30px;
+            background: rgba(16, 16, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 15px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 99;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .floating-menu.active {
+            display: flex;
+        }
+        
+        .menu-item {
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        .menu-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        
+        /* GitHub Analysis Page */
+        .github-analysis {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .github-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .github-input {
+            flex: 1;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        
+        .github-input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 255, 0.6);
+        }
+        
+        .analyze-btn {
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .analyze-btn:hover {
+            background: linear-gradient(135deg, #00e6e6, #0066cc);
+        }
+        
+        .github-results {
+            background: rgba(16, 16, 24, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+        
+        .result-content {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* File Upload Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: rgba(16, 16, 24, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #00ffff;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .file-preview {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .file-icon {
+            font-size: 60px;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+        
+        .file-name {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .file-size {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .upload-prompt {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .upload-prompt:focus {
+            outline: none;
+            border-color: rgba(0, 255, 255, 0.6);
+        }
+        
+        .upload-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            background: linear-gradient(135deg, #00e6e6, #0066cc);
+        }
+        
+        .upload-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            cursor: not-allowed;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
+            
+            .logo-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .logo-inner {
+                font-size: 2.5rem;
+            }
+            
+            .chat-sidebar {
+                display: none;
+            }
+            
+            .agent-card {
+                padding: 16px;
+            }
+            
+            .agent-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            .floating-menu-btn {
+                top: 20px;
+                left: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .floating-menu {
+                top: 80px;
+                left: 20px;
+            }
+        }
+        
+        /* Scroll Styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="cosmic-bg"></div>
+    <div class="stars" id="stars"></div>
+    
+    <!-- Floating Orbs -->
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+    <div class="floating-orb orb-3"></div>
+
+    <!-- PAGE 1: Authentication -->
+    <div id="page1" class="page active">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="main-container w-full max-w-md p-8">
+                <!-- Logo -->
+                <div class="logo-container">
+                    <div class="logo-inner">N</div>
+                </div>
+                
+                <!-- Title -->
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-black mb-3 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        NOVA-AI
+                    </h1>
+                    <p class="text-gray-400 text-lg typewriter">An AI That Codes, Cares, and Connects.</p>
+                </div>
+                
+                <!-- Welcome Message -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-white mb-3">Welcome to the Future</h2>
+                    <p class="text-gray-400">Sign in to experience next-generation AI</p>
+                </div>
+                
+                <!-- Auth Buttons -->
+                <div class="space-y-4 mb-6">
+                    <button id="googleSignIn" class="auth-btn google-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        <span>Continue with Google</span>
+                    </button>
+                    
+                    <button id="githubSignIn" class="auth-btn github-btn">
+                        <i class="fab fa-github text-xl"></i>
+                        <span>Continue with GitHub</span>
+                    </button>
+                </div>
+                
+                <!-- Terms -->
+                <p class="text-xs text-gray-500 text-center mb-6">
+                    By continuing, you agree to our 
+                    <a href="#" class="text-cyan-400 hover:text-cyan-300 transition-colors">Terms of Service</a> 
+                    and confirm you are 21+ years old.
+                </p>
+                
+                <!-- Personal Branding -->
+                <div class="text-center pt-6 border-t border-gray-800">
+                    <p class="text-gray-500 text-sm mb-1">Built with ❤️ by</p>
+                    <a href="https://www.linkedin.com/in/aryan-kakade27/" target="_blank" 
+                       class="text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-colors">
+                        Aryan Kakade
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: Profile Setup -->
+    <div id="page2" class="page">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="main-container w-full max-w-md p-8">
+                <!-- Logo -->
+                <div class="logo-container" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+                    <div class="logo-inner" style="font-size: 2rem;">N</div>
+                </div>
+                
+                <!-- Title -->
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-black mb-3 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        Tell Us About You
+                    </h1>
+                    <p class="text-gray-400">Let's personalize your NOVA experience</p>
+                </div>
+                
+                <!-- Profile Form -->
+                <form id="profileForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-cyan-400 mb-2">
+                            <i class="fas fa-user mr-2"></i>Your Name
+                        </label>
+                        <input type="text" id="userName" class="nova-input" 
+                               placeholder="Enter your full name" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-cyan-400 mb-2">
+                            <i class="fas fa-calendar mr-2"></i>Your Age
+                        </label>
+                        <input type="number" id="userAge" class="nova-input" 
+                               placeholder="Enter your age" min="18" max="100" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-cyan-400 mb-2">
+                            <i class="fas fa-briefcase mr-2"></i>Your Role (Optional)
+                        </label>
+                        <input type="text" id="userRole" class="nova-input" 
+                               placeholder="e.g., Software Developer, Student, Entrepreneur">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-cyan-400 mb-2">
+                            <i class="fas fa-heart mr-2"></i>What interests you most?
+                        </label>
+                        <select id="userInterest" class="nova-input" required>
+                            <option value="">Select your primary interest</option>
+                            <option value="coding">Programming & Development</option>
+                            <option value="business">Business & Analytics</option>
+                            <option value="career">Career Development</option>
+                            <option value="health">Health & Wellness</option>
+                            <option value="creative">Creative & Arts</option>
+                            <option value="general">General Knowledge</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="nova-btn nova-btn-primary w-full mt-8">
+                        <i class="fas fa-arrow-right mr-2"></i>
+                        Continue to Agent Selection
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: Agent Selection -->
+    <div id="page3" class="page">
+        <div class="min-h-screen p-4">
+            <div class="max-w-6xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <div class="logo-container" style="width: 60px; height: 60px; margin: 0 auto 1rem;">
+                        <div class="logo-inner" style="font-size: 1.5rem;">N</div>
+                    </div>
+                    <h1 class="text-4xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        Choose Your AI Agent
+                    </h1>
+                    <p class="text-gray-400 text-lg">Select the specialist that matches your needs best</p>
+                </div>
+                
+                <!-- Agent Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" style="max-height: 60vh; overflow-y: auto; padding: 1rem;">
+                    <div class="agent-card" data-agent="coding">
+                        <div class="agent-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Coding Expert</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Full-stack development, debugging, architecture, and code optimization
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">Python</span>
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">JavaScript</span>
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">React</span>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-card" data-agent="business">
+                        <div class="agent-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Business Consultant</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Strategic planning, analytics, KPIs, and business intelligence
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Analytics</span>
+                            <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Strategy</span>
+                            <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">ROI</span>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-card" data-agent="career">
+                        <div class="agent-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Career Coach</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Resume building, interview prep, career planning, and networking
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded">Resume</span>
+                            <span class="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded">Interview</span>
+                            <span class="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded">LinkedIn</span>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-card" data-agent="medical">
+                        <div class="agent-icon">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Health Advisor</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Health guidance, wellness tips, and medical information
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">Wellness</span>
+                            <span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">Nutrition</span>
+                            <span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">Fitness</span>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-card" data-agent="emotional">
+                        <div class="agent-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Emotional Counselor</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Mental health support, stress management, and emotional guidance
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs rounded">Support</span>
+                            <span class="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs rounded">Mindfulness</span>
+                            <span class="px-2 py-1 bg-pink-500/20 text-pink-400 text-xs rounded">Therapy</span>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-card" data-agent="general">
+                        <div class="agent-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">General Assistant</h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Multi-domain expertise with adaptive intelligence
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded">Adaptive</span>
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded">Smart</span>
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded">Versatile</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Continue Button -->
+                <div class="text-center">
+                    <button id="continueToChat" class="nova-btn nova-btn-primary px-8 py-4 text-lg" disabled>
+                        <i class="fas fa-comments mr-2"></i>
+                        Start Chatting with <span id="selectedAgentName">Agent</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: Main Chat Interface -->
+    <div id="page4" class="page">
+        <div class="chat-container">
+            <!-- Main Chat Area -->
+            <div class="chat-main">
+                <!-- Header -->
+                <div class="chat-header">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full flex items-center justify-center font-bold text-black">
+                            N
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-white" id="chatAgentName">NOVA Assistant</h2>
+                            <p class="text-xs text-gray-400" id="chatAgentDesc">Your AI companion</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <!-- Voice Toggle -->
+                        <button id="voiceToggle" class="action-btn" title="Toggle Voice Mode">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        
+                        <!-- Settings -->
+                        <button id="settingsBtn" class="action-btn" title="Settings">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <div class="font-medium text-cyan-400 mb-1">NOVA</div>
+                        <div>Hello! I'm NOVA, your AI assistant. I'm here to help you with anything you need. How can I assist you today?</div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="chat-input-container">
+                    <div class="relative">
+                        <textarea 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Type your message here... (Shift + Enter for new line)"
+                            rows="1"></textarea>
+                        
+                        <!-- Input Actions -->
+                        <div class="chat-actions">
+                            <button id="fileUploadBtn" class="action-btn" title="Upload File">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <button id="voiceBtn" class="action-btn" title="Voice Input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button id="sendBtn" class="action-btn" title="Send Message">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden File Input -->
+                        <input type="file" id="fileInput" style="display: none;" 
+                               accept=".pdf,.doc,.docx,.txt,.py,.js,.html,.css,.json,.csv,.xlsx">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Floating Menu Button -->
+        <button class="floating-menu-btn" id="floatingMenuBtn">
+            <i class="fas fa-plus"></i>
+        </button>
+        
+        <!-- Floating Menu -->
+        <div class="floating-menu" id="floatingMenu">
+            <div class="menu-item" id="chatMenuItem">
+                <i class="fas fa-comment text-cyan-400"></i>
+                <span>Chat</span>
+            </div>
+            <div class="menu-item" id="dashboardMenuItem">
+                <i class="fas fa-chart-line text-purple-400"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="menu-item" id="settingsMenuItem">
+                <i class="fas fa-cog text-blue-400"></i>
+                <span>Settings</span>
+            </div>
+            <div class="menu-item" id="aboutMenuItem">
+                <i class="fas fa-info-circle text-green-400"></i>
+                <span>About</span>
+            </div>
+            <div class="menu-item" id="githubMenuItem">
+                <i class="fab fa-github text-white"></i>
+                <span>GitHub Analysis</span>
+            </div>
+            <div class="menu-item" id="logoutMenuItem">
+                <i class="fas fa-sign-out-alt text-red-400"></i>
+                <span>Logout</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 5: Dashboard -->
+    <div id="page5" class="page">
+        <div class="min-h-screen p-6">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                            Your NOVA Dashboard
+                        </h1>
+                        <p class="text-gray-400">Insights and analytics about your NOVA usage</p>
+                    </div>
+                    <button class="nova-btn nova-btn-secondary" id="dashboardBackBtn">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Chat
+                    </button>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="dashboard-card">
+                        <div class="text-gray-400 mb-2">Total Chats</div>
+                        <div class="stat-number">127</div>
+                        <div class="text-xs text-gray-500 mt-2">+12% from last week</div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="text-gray-400 mb-2">Average Response Time</div>
+                        <div class="stat-number">1.2s</div>
+                        <div class="text-xs text-gray-500 mt-2">Faster than 92% of users</div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="text-gray-400 mb-2">Active Days</div>
+                        <div class="stat-number">24</div>
+                        <div class="text-xs text-gray-500 mt-2">Consistent learner!</div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="text-gray-400 mb-2">Favorite Agent</div>
+                        <div class="stat-number">Coding</div>
+                        <div class="text-xs text-gray-500 mt-2">85% of your chats</div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="dashboard-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-white">Weekly Activity</h3>
+                            <select class="nova-input text-xs py-1 px-2">
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Last 90 days</option>
+                            </select>
+                        </div>
+                        <div class="h-64 bg-gray-800/50 rounded-lg flex items-center justify-center">
+                            <p class="text-gray-500">Activity chart will be displayed here</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-white">Agent Usage</h3>
+                            <select class="nova-input text-xs py-1 px-2">
+                                <option>All time</option>
+                                <option>This month</option>
+                                <option>This week</option>
+                            </select>
+                        </div>
+                        <div class="h-64 bg-gray-800/50 rounded-lg flex items-center justify-center">
+                            <p class="text-gray-500">Pie chart will be displayed here</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Sessions -->
+                <div class="dashboard-card">
+                    <h3 class="text-lg font-semibold text-white mb-4">Recent Sessions</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
+                            <div>
+                                <div class="font-medium">Coding Help</div>
+                                <div class="text-xs text-gray-400">2 hours ago</div>
+                            </div>
+                            <div class="text-sm text-cyan-400">23 messages</div>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
+                            <div>
+                                <div class="font-medium">Business Strategy</div>
+                                <div class="text-xs text-gray-400">1 day ago</div>
+                            </div>
+                            <div class="text-sm text-cyan-400">15 messages</div>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
+                            <div>
+                                <div class="font-medium">General Questions</div>
+                                <div class="text-xs text-gray-400">3 days ago</div>
+                            </div>
+                            <div class="text-sm text-cyan-400">8 messages</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 6: Settings -->
+    <div id="page6" class="page">
+        <div class="min-h-screen p-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                            Settings
+                        </h1>
+                        <p class="text-gray-400">Customize your NOVA experience</p>
+                    </div>
+                    <button class="nova-btn nova-btn-secondary" id="settingsBackBtn">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Chat
+                    </button>
+                </div>
+                
+                <!-- Profile Settings -->
+                <div class="dashboard-card mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-user text-cyan-400"></i>
+                        <span>Profile Settings</span>
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <div class="settings-option">
+                            <label class="block text-sm font-medium text-cyan-400 mb-2">
+                                <i class="fas fa-user-circle mr-2"></i>Display Name
+                            </label>
+                            <input type="text" class="nova-input" value="Aryan Kakade">
+                        </div>
+                        
+                        <div class="settings-option">
+                            <label class="block text-sm font-medium text-cyan-400 mb-2">
+                                <i class="fas fa-envelope mr-2"></i>Email Address
+                            </label>
+                            <input type="email" class="nova-input" value="aryan@example.com" disabled>
+                        </div>
+                        
+                        <div class="settings-option">
+                            <label class="block text-sm font-medium text-cyan-400 mb-2">
+                                <i class="fas fa-calendar mr-2"></i>Age
+                            </label>
+                            <input type="number" class="nova-input" value="24">
+                        </div>
+                        
+                        <div class="settings-option">
+                            <label class="block text-sm font-medium text-cyan-400 mb-2">
+                                <i class="fas fa-briefcase mr-2"></i>Role
+                            </label>
+                            <input type="text" class="nova-input" value="AI/ML Engineer">
+                        </div>
+                        
+                        <button class="nova-btn nova-btn-primary w-full">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- App Preferences -->
+                <div class="dashboard-card mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-cog text-blue-400"></i>
+                        <span>App Preferences</span>
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center settings-option">
+                            <div>
+                                <div class="font-medium text-white">Dark Mode</div>
+                                <div class="text-xs text-gray-400">Toggle between dark and light theme</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center settings-option">
+                            <div>
+                                <div class="font-medium text-white">Voice Input</div>
+                                <div class="text-xs text-gray-400">Enable voice commands</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center settings-option">
+                            <div>
+                                <div class="font-medium text-white">Notifications</div>
+                                <div class="text-xs text-gray-400">Enable desktop notifications</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center settings-option">
+                            <div>
+                                <div class="font-medium text-white">Auto-save Chats</div>
+                                <div class="text-xs text-gray-400">Save chat history locally</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Management -->
+                <div class="dashboard-card">
+                    <h3 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-database text-purple-400"></i>
+                        <span>Data Management</span>
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <button class="nova-btn nova-btn-secondary w-full">
+                            <i class="fas fa-download mr-2"></i>Export Chat History
+                        </button>
+                        
+                        <button class="nova-btn nova-btn-secondary w-full">
+                            <i class="fas fa-trash-alt mr-2"></i>Clear Local Data
+                        </button>
+                        
+                        <div class="text-xs text-gray-500 mt-4">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Your data is stored locally in your browser. Clearing data will remove all your preferences and chat history.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 7: About & Support -->
+    <div id="page7" class="page">
+        <div class="min-h-screen p-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                            About NOVA-AI
+                        </h1>
+                        <p class="text-gray-400">Learn more about your AI companion</p>
+                    </div>
+                    <button class="nova-btn nova-btn-secondary" id="aboutBackBtn">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Chat
+                    </button>
+                </div>
+                
+                <!-- About Section -->
+                <div class="dashboard-card mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-4">What is NOVA-AI?</h3>
+                    <p class="text-gray-300 mb-4">
+                        NOVA-AI is a next-generation artificial intelligence assistant designed to help you with coding, business, career development, and personal growth. 
+                        It combines state-of-the-art language models with specialized domain knowledge to provide accurate and helpful responses.
+                    </p>
+                    <p class="text-gray-300">
+                        Unlike traditional chatbots, NOVA adapts to your needs, remembers your preferences, and grows with you over time. 
+                        Whether you're debugging code, planning a business strategy, or just need someone to talk to, NOVA is here to help.
+                    </p>
+                </div>
+                
+                <!-- Team Section -->
+                <div class="dashboard-card mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">Meet the Creator</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="team-card">
+                            <div class="team-avatar">A</div>
+                            <h4 class="text-lg font-bold text-white mb-1">Aryan Kakade</h4>
+                            <div class="text-sm text-cyan-400 mb-3">AI/ML Engineer & Founder</div>
+                            <p class="text-gray-400 text-sm mb-4">
+                                MLops enthusiast with a passion for building intelligent systems that make people's lives easier.
+                            </p>
+                            <div class="flex justify-center gap-4">
+                                <a href="https://www.linkedin.com/in/aryan-kakade27/" target="_blank" class="text-blue-400 hover:text-blue-300">
+                                    <i class="fab fa-linkedin text-xl"></i>
+                                </a>
+                                <a href="https://github.com/aryankakade27" target="_blank" class="text-white hover:text-gray-300">
+                                    <i class="fab fa-github text-xl"></i>
+                                </a>
+                                <a href="mailto:aryankakade27@gmail.com" class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-envelope text-xl"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="team-card">
+                            <div class="team-avatar">N</div>
+                            <h4 class="text-lg font-bold text-white mb-1">NOVA-AI</h4>
+                            <div class="text-sm text-purple-400 mb-3">Your AI Companion</div>
+                            <p class="text-gray-400 text-sm mb-4">
+                                Always learning, always improving - designed to be your perfect assistant across all domains.
+                            </p>
+                            <div class="text-xs text-gray-500">
+                                <i class="fas fa-code-branch mr-1"></i>
+                                Version 1.0.0 | Last updated: June 2024
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Support Section -->
+                <div class="dashboard-card">
+                    <h3 class="text-xl font-semibold text-white mb-4">Support & Resources</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="settings-option">
+                            <div class="font-medium text-white mb-1">
+                                <i class="fas fa-question-circle text-green-400 mr-2"></i>
+                                Frequently Asked Questions
+                            </div>
+                            <p class="text-gray-400 text-sm">
+                                Find answers to common questions about using NOVA-AI.
+                            </p>
+                        </div>
+                        
+                        <div class="settings-option">
+                            <div class="font-medium text-white mb-1">
+                                <i class="fas fa-bug text-yellow-400 mr-2"></i>
+                                Report a Bug
+                            </div>
+                            <p class="text-gray-400 text-sm">
+                                Found an issue? Let us know so we can fix it.
+                            </p>
+                        </div>
+                        
+                        <div class="settings-option">
+                            <div class="font-medium text-white mb-1">
+                                <i class="fas fa-lightbulb text-cyan-400 mr-2"></i>
+                                Feature Request
+                            </div>
+                            <p class="text-gray-400 text-sm">
+                                Have an idea for improving NOVA? We'd love to hear it!
+                            </p>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500 mt-4">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            NOVA-AI is constantly evolving. Your feedback helps us improve.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 8: GitHub Analysis -->
+    <div id="page8" class="page">
+        <div class="min-h-screen p-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                            GitHub Repository Analysis
+                        </h1>
+                        <p class="text-gray-400">Analyze any GitHub repository with NOVA's advanced capabilities</p>
+                    </div>
+                    <button class="nova-btn nova-btn-secondary" id="githubBackBtn">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Chat
+                    </button>
+                </div>
+                
+                <!-- GitHub Analysis Form -->
+                <div class="dashboard-card mb-8">
+                    <div class="github-input-container">
+                        <input type="text" class="github-input" id="githubRepoUrl" placeholder="Enter GitHub repository URL (e.g., https://github.com/user/repo)">
+                        <button class="analyze-btn" id="analyzeRepoBtn">Analyze</button>
+                    </div>
+                    
+                    <div class="github-results" id="githubResults">
+                        <div class="result-section">
+                            <h3 class="result-title">Repository Analysis</h3>
+                            <div class="result-content" id="repoAnalysis">
+                                Enter a GitHub repository URL to begin analysis. NOVA will examine the codebase, 
+                                identify potential issues, and provide comprehensive insights.
+                            </div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h3 class="result-title">Code Quality Report</h3>
+                            <div class="result-content" id="codeQuality">
+                                Waiting for repository analysis...
+                            </div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h3 class="result-title">Debugging Suggestions</h3>
+                            <div class="result-content" id="debugSuggestions">
+                                Waiting for repository analysis...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    <div class="modal-overlay" id="fileModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Upload File</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            
+            <div class="file-preview">
+                <i class="fas fa-file-alt file-icon"></i>
+                <div class="file-name" id="fileName">No file selected</div>
+                <div class="file-size" id="fileSize">-</div>
+            </div>
+            
+            <textarea class="upload-prompt" id="filePrompt" placeholder="What would you like NOVA to do with this file?"></textarea>
+            
+            <button class="upload-btn" id="confirmUploadBtn" disabled>
+                <i class="fas fa-upload mr-2"></i>Upload & Process
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p class="text-xl font-semibold">Processing...</p>
+            <p class="text-gray-400 text-sm mt-2" id="loadingMessage">Please wait</p>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYwSA8ctA0oLPdLCPpila33tktUJjV1lE",
+            authDomain: "nova-ai-8dfc1.firebaseapp.com",
+            projectId: "nova-ai-8dfc1",
+            storageBucket: "nova-ai-8dfc1.firebasestorage.app",
+            messagingSenderId: "263904715663",
+            appId: "1:263904715663:web:03294c7ada3b96eb0a21fa",
+            measurementId: "G-3EPNHKJD9S"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Global Variables
+        let currentUser = null;
+        let currentPage = 1;
+        let selectedAgent = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let chatHistory = [];
+        let currentSession = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            createStars();
+            setupEventListeners();
+            checkAuthState();
+        }
+
+        // Create Stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Page 1 - Authentication
+            document.getElementById('googleSignIn').addEventListener('click', handleGoogleSignIn);
+            document.getElementById('githubSignIn').addEventListener('click', handleGitHubSignIn);
+            
+            // Page 2 - Profile Setup
+            document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
+            
+            // Page 3 - Agent Selection
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.addEventListener('click', () => selectAgent(card.dataset.agent));
+            });
+            document.getElementById('continueToChat').addEventListener('click', continueToChat);
+            
+            // Page 4 - Chat Interface
+            setupChatEventListeners();
+            
+            // Floating Menu
+            document.getElementById('floatingMenuBtn').addEventListener('click', toggleFloatingMenu);
+            document.getElementById('chatMenuItem').addEventListener('click', () => navigateToPage(4));
+            document.getElementById('dashboardMenuItem').addEventListener('click', () => navigateToPage(5));
+            document.getElementById('settingsMenuItem').addEventListener('click', () => navigateToPage(6));
+            document.getElementById('aboutMenuItem').addEventListener('click', () => navigateToPage(7));
+            document.getElementById('githubMenuItem').addEventListener('click', () => navigateToPage(8));
+            document.getElementById('logoutMenuItem').addEventListener('click', handleLogout);
+            
+            // Back buttons
+            document.getElementById('dashboardBackBtn').addEventListener('click', () => navigateToPage(4));
+            document.getElementById('settingsBackBtn').addEventListener('click', () => navigateToPage(4));
+            document.getElementById('aboutBackBtn').addEventListener('click', () => navigateToPage(4));
+            document.getElementById('githubBackBtn').addEventListener('click', () => navigateToPage(4));
+            
+            // GitHub Analysis
+            document.getElementById('analyzeRepoBtn').addEventListener('click', analyzeGitHubRepo);
+            
+            // File Upload Modal
+            document.getElementById('fileUploadBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            document.getElementById('closeModal').addEventListener('click', closeFileModal);
+            document.getElementById('filePrompt').addEventListener('input', validateFileUpload);
+            document.getElementById('confirmUploadBtn').addEventListener('click', processFileUpload);
+        }
+
+        function setupChatEventListeners() {
+            // Chat input
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('keydown', handleChatInputKeydown);
+            chatInput.addEventListener('input', autoResize);
+            
+            // Send button
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            
+            // Voice button
+            document.getElementById('voiceBtn').addEventListener('click', toggleVoiceRecording);
+        }
+
+        // Authentication Functions
+        function checkAuthState() {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    // Check if profile setup is complete
+                    const profileData = localStorage.getItem('profileData');
+                    if (!profileData) {
+                        navigateToPage(2);
+                    } else {
+                        navigateToPage(4);
+                        initializeChatInterface();
+                    }
+                } else {
+                    navigateToPage(1);
+                }
+            });
+        }
+
+        async function handleGoogleSignIn() {
+            try {
+                showLoading('Authenticating with Google...');
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('profile');
+                provider.addScope('email');
+                
+                const result = await firebase.auth().signInWithPopup(provider);
+                currentUser = result.user;
+                
+                showLoadingSuccess('Welcome! Setting up your profile...');
+                setTimeout(() => {
+                    hideLoading();
+                    navigateToPage(2);
+                }, 1500);
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Google sign-in error:', error);
+                showNotification('Authentication failed. Please try again.', 'error');
+            }
+        }
+
+        async function handleGitHubSignIn() {
+            try {
+                showLoading('Authenticating with GitHub...');
+                const provider = new firebase.auth.GithubAuthProvider();
+                provider.addScope('user:email');
+                
+                const result = await firebase.auth().signInWithPopup(provider);
+                currentUser = result.user;
+                
+                showLoadingSuccess('Welcome! Setting up your profile...');
+                setTimeout(() => {
+                    hideLoading();
+                    navigateToPage(2);
+                }, 1500);
+                
+            } catch (error) {
+                hideLoading();
+                console.error('GitHub sign-in error:', error);
+                showNotification('Authentication failed. Please try again.', 'error');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await firebase.auth().signOut();
+                localStorage.removeItem('profileData');
+                localStorage.removeItem('chatHistory');
+                navigateToPage(1);
+            } catch (error) {
+                console.error('Logout error:', error);
+                showNotification('Failed to logout. Please try again.', 'error');
+            }
+        }
+
+        // Profile Setup
+        function handleProfileSubmit(e) {
+            e.preventDefault();
+            
+            const profileData = {
+                name: document.getElementById('userName').value,
+                age: parseInt(document.getElementById('userAge').value),
+                role: document.getElementById('userRole').value,
+                interest: document.getElementById('userInterest').value,
+                email: currentUser.email,
+                photoURL: currentUser.photoURL
+            };
+            
+            // Validate
+            if (!profileData.name || !profileData.age || !profileData.interest) {
+                showNotification('Please fill in all required fields.', 'error');
+                return;
+            }
+            
+            if (profileData.age < 18) {
+                showNotification('You must be at least 18 years old.', 'error');
+                return;
+            }
+            
+            // Save profile data
+            localStorage.setItem('profileData', JSON.stringify(profileData));
+            
+            showLoading('Saving your profile...');
+            setTimeout(() => {
+                hideLoading();
+                navigateToPage(3);
+            }, 1000);
+        }
+
+        // Agent Selection
+        function selectAgent(agentType) {
+            // Remove previous selection
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Select new agent
+            const selectedCard = document.querySelector(`[data-agent="${agentType}"]`);
+            selectedCard.classList.add('selected');
+            selectedAgent = agentType;
+            
+            // Update continue button
+            const continueBtn = document.getElementById('continueToChat');
+            const agentNames = {
+                coding: 'Coding Expert',
+                business: 'Business Consultant',
+                career: 'Career Coach',
+                medical: 'Health Advisor',
+                emotional: 'Emotional Counselor',
+                general: 'General Assistant'
+            };
+            
+            document.getElementById('selectedAgentName').textContent = agentNames[agentType];
+            continueBtn.disabled = false;
+        }
+
+        function continueToChat() {
+            if (!selectedAgent) return;
+            
+            showLoading('Initializing your AI assistant...');
+            setTimeout(() => {
+                hideLoading();
+                navigateToPage(4);
+                initializeChatInterface();
+            }, 1500);
+        }
+
+        // Chat Interface
+        function initializeChatInterface() {
+            const profileData = JSON.parse(localStorage.getItem('profileData') || '{}');
+            
+            // Update agent info
+            if (selectedAgent) {
+                const agentInfo = getAgentInfo(selectedAgent);
+                document.getElementById('chatAgentName').textContent = agentInfo.name;
+                document.getElementById('chatAgentDesc').textContent = agentInfo.description;
+            }
+            
+            // Initialize session
+            currentSession = generateSessionId();
+            
+            // Load chat history
+            loadChatHistory();
+        }
+
+        function getAgentInfo(agentType) {
+            const agents = {
+                coding: { name: 'NOVA Coding Expert', description: 'Programming & Development Specialist' },
+                business: { name: 'NOVA Business Consultant', description: 'Strategic Business Advisor' },
+                career: { name: 'NOVA Career Coach', description: 'Professional Development Expert' },
+                medical: { name: 'Dr. NOVA', description: 'Health & Wellness Advisor' },
+                emotional: { name: 'NOVA Counselor', description: 'Emotional Support Specialist' },
+                general: { name: 'NOVA Assistant', description: 'Multi-Domain AI Helper' }
+            };
+            return agents[agentType] || agents.general;
+        }
+
+        // Chat Functions
+        function handleChatInputKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize() {
+            const textarea = document.getElementById('chatInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Clear input
+            input.value = '';
+            autoResize();
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            
+            // Show typing indicator
+            const typingId = addTypingIndicator();
+            
+            try {
+                // Call backend /chat endpoint
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        agent: selectedAgent,
+                        sessionId: currentSession
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                removeTypingIndicator(typingId);
+                
+                // Add bot response to chat
+                addMessageToChat('bot', data.response);
+                
+                // Save to history
+                saveChatToHistory(message, data.response);
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                removeTypingIndicator(typingId);
+                addMessageToChat('bot', "Sorry, I'm having trouble connecting right now. Please check your internet connection and try again.");
+            }
+        }
+
+        function addMessageToChat(sender, message, metadata = {}) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="font-medium text-cyan-400 mb-1">
+                        ${getAgentInfo(selectedAgent || 'general').name}
+                    </div>
+                    <div>${formatMessage(message)}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `<div>${formatMessage(message)}</div>`;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatMessage(message) {
+            // Basic markdown formatting
+            return message
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-800 px-1 rounded">$1</code>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function addTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            const typingId = 'typing-' + Date.now();
+            typingDiv.id = typingId;
+            typingDiv.className = 'message bot';
+            typingDiv.innerHTML = `
+                <div class="font-medium text-cyan-400 mb-1">${getAgentInfo(selectedAgent || 'general').name}</div>
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                    <div class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return typingId;
+        }
+
+        function removeTypingIndicator(typingId) {
+            const typingDiv = document.getElementById(typingId);
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
+
+        // Voice Functions
+        async function toggleVoiceRecording() {
+            if (!isRecording) {
+                startVoiceRecording();
+            } else {
+                stopVoiceRecording();
+            }
+        }
+
+        async function startVoiceRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await processVoiceInput(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                // Update UI
+                const voiceBtn = document.getElementById('voiceBtn');
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                
+                showNotification('Recording... Click again to stop', 'info');
+                
+            } catch (error) {
+                console.error('Voice recording error:', error);
+                showNotification('Unable to access microphone', 'error');
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                // Update UI
+                const voiceBtn = document.getElementById('voiceBtn');
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                
+                showLoading('Processing voice input...');
+            }
+        }
+
+        async function processVoiceInput(audioBlob) {
+            try {
+                // Create FormData to send the audio file
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.wav');
+                formData.append('sessionId', currentSession);
+                
+                // Call backend /voiceinput endpoint
+                const response = await fetch('/voiceinput', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                hideLoading();
+                
+                // Add recognized text to input
+                document.getElementById('chatInput').value = data.text;
+                autoResize();
+                
+                // Auto-send
+                sendMessage();
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Voice processing error:', error);
+                showNotification('Error processing voice input', 'error');
+            }
+        }
+
+        // File Upload Functions
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Show file info in modal
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            
+            // Show modal
+            document.getElementById('fileModal').classList.add('active');
+            
+            // Reset prompt
+            document.getElementById('filePrompt').value = '';
+            document.getElementById('confirmUploadBtn').disabled = true;
+        }
+
+        function validateFileUpload() {
+            const prompt = document.getElementById('filePrompt').value.trim();
+            document.getElementById('confirmUploadBtn').disabled = !prompt;
+        }
+
+        function closeFileModal() {
+            document.getElementById('fileModal').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+        }
+
+        async function processFileUpload() {
+            const file = document.getElementById('fileInput').files[0];
+            const prompt = document.getElementById('filePrompt').value.trim();
+            
+            if (!file || !prompt) return;
+            
+            // Close modal
+            closeFileModal();
+            
+            // Add user message to chat
+            addMessageToChat('user', `[File: ${file.name}] ${prompt}`);
+            
+            // Show typing indicator
+            const typingId = addTypingIndicator();
+            
+            try {
+                // Create FormData to send the file and prompt
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('prompt', prompt);
+                formData.append('sessionId', currentSession);
+                
+                // Call backend /uploadfile endpoint
+                const response = await fetch('/uploadfile', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                removeTypingIndicator(typingId);
+                
+                // Add bot response to chat
+                addMessageToChat('bot', data.response);
+                
+                // Save to history
+                saveChatToHistory(`[File: ${file.name}] ${prompt}`, data.response);
+                
+            } catch (error) {
+                console.error('File upload error:', error);
+                removeTypingIndicator(typingId);
+                addMessageToChat('bot', "Sorry, I encountered an error processing your file. Please try again.");
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // GitHub Analysis Functions
+        async function analyzeGitHubRepo() {
+            const repoUrl = document.getElementById('githubRepoUrl').value.trim();
+            if (!repoUrl) {
+                showNotification('Please enter a GitHub repository URL', 'error');
+                return;
+            }
+            
+            // Validate GitHub URL
+            if (!isValidGitHubUrl(repoUrl)) {
+                showNotification('Please enter a valid GitHub repository URL', 'error');
+                return;
+            }
+            
+            showLoading('Analyzing GitHub repository...');
+            
+            try {
+                // Call backend /analyze-github endpoint
+                const response = await fetch('/analyze-github', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        repoUrl: repoUrl,
+                        sessionId: currentSession
+                    })
+                });
+                
+                const data = await response.json();
+                
+                hideLoading();
+                
+                // Update results
+                document.getElementById('repoAnalysis').textContent = data.analysis || 'No analysis available';
+                document.getElementById('codeQuality').textContent = data.codeQuality || 'No code quality report available';
+                document.getElementById('debugSuggestions').textContent = data.debugSuggestions || 'No debugging suggestions available';
+                
+                // Add to chat history
+                addMessageToChat('user', `[GitHub Analysis] ${repoUrl}`);
+                addMessageToChat('bot', `I've analyzed the GitHub repository. Here's what I found:\n\n${data.analysis}\n\nCode Quality:\n${data.codeQuality}\n\nDebug Suggestions:\n${data.debugSuggestions}`);
+                
+            } catch (error) {
+                hideLoading();
+                console.error('GitHub analysis error:', error);
+                showNotification('Error analyzing GitHub repository', 'error');
+            }
+        }
+
+        function isValidGitHubUrl(url) {
+            return url.match(/^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(\/)?$/);
+        }
+
+        // Chat History Functions
+        function saveChatToHistory(userMessage, botResponse) {
+            const chat = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                userMessage: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : ''),
+                botResponse: botResponse.substring(0, 100),
+                agent: selectedAgent || 'general'
+            };
+            
+            chatHistory.unshift(chat);
+            
+            // Keep only last 20 chats
+            if (chatHistory.length > 20) {
+                chatHistory = chatHistory.slice(0, 20);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+
+        function loadChatHistory() {
+            const saved = localStorage.getItem('chatHistory');
+            if (saved) {
+                chatHistory = JSON.parse(saved);
+            }
+        }
+
+        // Utility Functions
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function toggleFloatingMenu() {
+            document.getElementById('floatingMenu').classList.toggle('active');
+        }
+
+        function navigateToPage(pageNumber) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show target page
+            document.getElementById(`page${pageNumber}`).classList.add('active');
+            currentPage = pageNumber;
+            
+            // Hide floating menu
+            document.getElementById('floatingMenu').classList.remove('active');
+            
+            // Initialize page if needed
+            if (pageNumber === 4) {
+                initializeChatInterface();
+            }
+        }
+
+        function showLoading(message = 'Loading...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const messageEl = document.getElementById('loadingMessage');
+            messageEl.textContent = message;
+            overlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function showLoadingSuccess(message) {
+            const content = document.querySelector('.loading-content');
+            content.innerHTML = `
+                <div class="success-check"></div>
+                <p class="text-xl font-semibold text-green-400">${message}</p>
+            `;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300 transform translate-x-full`;
+            
+            // Set colors based on type
+            const colors = {
+                info: 'bg-blue-600 border-blue-500',
+                success: 'bg-green-600 border-green-500',
+                error: 'bg-red-600 border-red-500',
+                warning: 'bg-yellow-600 border-yellow-500'
+            };
+            
+            notification.className += ` ${colors[type] || colors.info} border-l-4 text-white`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
